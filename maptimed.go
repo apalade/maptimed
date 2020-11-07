@@ -62,13 +62,15 @@ func (mt *MapTimed) Set(key string, val interface{}) {
 
 func (mt *MapTimed) clear() {
 	<-mt.timer.C
+
+	mt.lock.Lock()
 	for key, mtv := range mt.m {
 		if time.Since(mtv.laccess) > mt.timeout {
-			mt.lock.Lock()
 			delete(mt.m, key)
-			mt.lock.Unlock()
 		}
 	}
 	mt.timer.Reset(mt.timeout)
+	mt.lock.Unlock()
+
 	mt.clear()
 }

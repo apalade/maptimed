@@ -1,4 +1,4 @@
 # maptimed
-Map implementation that supports timeout values after a certain amount of time
+A synced map implementation that supports timeout values after a certain amount of time.
 
-examples in the maptimed_test.go file
+For examples see maptimed_test.go file
