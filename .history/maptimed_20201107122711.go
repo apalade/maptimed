@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// MapTimed is a synchronized structure with key (string) -> value (any type) which erases all keys that haven't been accessed after a specified timeout
+// MapTimed is a structure with key (string) -> value (any type) which erases all keys that haven't been accessed after a specified timeout
 type MapTimed struct {
 	m       map[string]*mapTimedValue
 	timeout time.Duration

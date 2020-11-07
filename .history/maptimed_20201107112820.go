@@ -2,16 +2,16 @@ package maptimed
 
 import (
 	"errors"
-	"sync"
 	"time"
 )
 
-// MapTimed is a synchronized structure with key (string) -> value (any type) which erases all keys that haven't been accessed after a specified timeout
+/*
+MapTimed is a structure with key (string) -> value (any type) which erases all keys that haven't been accessed after a specified timeout
+*/
 type MapTimed struct {
 	m       map[string]*mapTimedValue
 	timeout time.Duration
 	timer   *time.Timer
-	lock    sync.Mutex
 }
 
 type mapTimedValue struct {
@@ -19,15 +19,15 @@ type mapTimedValue struct {
 	laccess time.Time
 }
 
-// NewMapTimed returns a MapTimed structure that will delete all keys that haven't been accessed in more than timeout duration
-func NewMapTimed(timeout time.Duration) (*MapTimed, error) {
+// NewMapTimed returns a MapTimed structure that will delete all keys that haven't been accessed in more than timeout seconds
+func NewMapTimed(timeout int64) (*MapTimed, error) {
 	if timeout < 1 {
 		return nil, errors.New("Please provide a timeout value of at least 1s")
 	}
 
 	mt := new(MapTimed)
 	mt.m = make(map[string]*mapTimedValue)
-	mt.timeout = timeout
+	mt.timeout = time.Duration(timeout)
 	mt.timer = time.NewTimer(mt.timeout * time.Second)
 	go mt.clear()
 	return mt, nil
@@ -35,23 +35,12 @@ func NewMapTimed(timeout time.Duration) (*MapTimed, error) {
 
 // Get a value from a MapTimed
 func (mt *MapTimed) Get(key string) (val interface{}) {
-	mt.lock.Lock()
-	defer mt.lock.Unlock()
-
-	_, exists := mt.m[key]
-	if !exists {
-		return nil
-	}
 	mt.m[key].laccess = time.Now()
-
 	return mt.m[key].v
 }
 
-// Set a value in a MapTimed
+// Set a value from a MapTimed
 func (mt *MapTimed) Set(key string, val interface{}) {
-	mt.lock.Lock()
-	defer mt.lock.Unlock()
-
 	_, exists := mt.m[key]
 	if !exists {
 		mt.m[key] = new(mapTimedValue)
@@ -62,13 +51,11 @@ func (mt *MapTimed) Set(key string, val interface{}) {
 
 func (mt *MapTimed) clear() {
 	<-mt.timer.C
+	// Do what you need to do every x seconds
 	for key, mtv := range mt.m {
-		if time.Since(mtv.laccess) > mt.timeout {
-			mt.lock.Lock()
+		if time.Since(mtv.laccess).Seconds() > mt.timeout.Seconds() {
 			delete(mt.m, key)
-			mt.lock.Unlock()
 		}
 	}
-	mt.timer.Reset(mt.timeout)
-	mt.clear()
+
 }
